@@ -37,6 +37,7 @@
 #include <fuse_core/graph.h>
 #include <fuse_core/transaction.h>
 #include <fuse_optimizers/optimizer.h>
+#include <fuse_optimizers/variable_stamp_index.h>
 #include <fuse_optimizers/vector_queue.h>
 #include <ros/ros.h>
 
@@ -174,11 +175,18 @@ protected:
   std::mutex pending_transactions_mutex_;  //!< Synchronize modification of the pending_transactions_ container
   ros::Time start_time_;  //!< The timestamp of the first ignition sensor transaction
   bool started_;  //!< Flag indicating the optimizer is ready/has received a transaction from an ignition sensor
+  VariableStampIndex timestamp_tracking_;  //!< Object that tracks the timestamp associated with each variable
   ros::Duration transaction_timeout_;  //!< Parameter that controls how long to wait for a transaction to be processed
                                        //!< successfully before kicking it out of the queue.
 
   // Ordering ROS objects with callbacks last
   ros::Timer optimize_timer_;  //!< Trigger an optimization operation at a fixed frequency
+
+  virtual void preprocessMarginalization(const fuse_core::Transaction& new_transaction);
+
+  virtual std::vector<fuse_core::UUID> computeVariablesToMarginalize();
+
+  virtual void postprocessMarginalization(const fuse_core::Transaction& marginal_transaction);
 
   /**
    * @brief Function that optimizes all constraints, designed to be run in a separate thread.
